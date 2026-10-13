@@ -9,7 +9,7 @@ import re
 st.set_page_config(page_title="Importador Selene", page_icon="🧦", layout="centered")
 
 st.title("Conversor NFe: Selene 🧦")
-st.write("Faça o upload do XML da Selene. O sistema extrai a Cor (código) e o Tamanho analisando a referência do produto (cProd).")
+st.write("Faça o upload do XML da Selene. O sistema separa o Tamanho e a Cor escondidos na última parte da referência (cProd).")
 
 # Botão de Upload na interface
 uploaded_file = st.file_uploader("Arraste e solte o arquivo XML aqui", type=["xml"])
@@ -57,27 +57,21 @@ if uploaded_file is not None:
                 ean = prod.find('nfe:cEAN', ns).text if prod.find('nfe:cEAN', ns) is not None else ""
                 unidade = prod.find('nfe:uCom', ns).text if prod.find('nfe:uCom', ns) is not None else ""
                 
-                # --- A MÁGICA DA SELENE: EXTRAINDO COR E TAMANHO DO CÓDIGO COM PONTOS ---
+                # --- A MÁGICA DA SELENE: SEPARANDO TAMANHO E COR DO FINAL ---
                 tamanho_extraido = ""
                 cor_extraida = "" 
                 
                 if referencia and "." in referencia:
                     partes = referencia.split(".")
                     if len(partes) >= 3:
-                        # Pega a parte do meio (ex: 001) para a Cor
-                        cor_extraida = partes[1].strip()
+                        # Pega a última parte (ex: 42500, P500, GG800)
+                        codigo_final = partes[-1].strip() 
                         
-                        # Pega a última parte (ex: 42500) para o Tamanho
-                        tamanho_cru = partes[-1].strip() 
-                        
-                        # Extrai apenas os dois primeiros caracteres se for um número longo (para pegar o "42")
-                        if len(tamanho_cru) >= 2 and tamanho_cru[:2].isdigit():
-                            tamanho_extraido = tamanho_cru[:2]
-                        elif tamanho_cru:
-                            # Caso enviem tamanhos em letras
-                            match = re.match(r"([A-Z]{1,2})", tamanho_cru.upper())
-                            if match:
-                                tamanho_extraido = match.group(1)
+                        # Expressão regular: Pega 1 ou 2 letras, OU exatos 2 números para o tamanho. O resto vai pra cor.
+                        match = re.match(r'^([A-Z]{1,2}|\d{2})(.*)$', codigo_final.upper())
+                        if match:
+                            tamanho_extraido = match.group(1)
+                            cor_extraida = match.group(2)
                 
                 # Cálculo do Preço (Regra dos ,90)
                 custo_str = prod.find('nfe:vUnCom', ns).text if prod.find('nfe:vUnCom', ns) is not None else "0"
@@ -101,7 +95,7 @@ if uploaded_file is not None:
                 linha_excel["NCM"] = ncm
                 linha_excel["Código de barras"] = ean
                 
-                # Preenchendo as colunas Cor (com o código) e Tamanho
+                # Preenchendo as colunas separadas
                 linha_excel["Tamanho"] = tamanho_extraido
                 linha_excel["Cores"] = cor_extraida
                 
