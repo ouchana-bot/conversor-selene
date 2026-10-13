@@ -3,12 +3,13 @@ import pandas as pd
 import xml.etree.ElementTree as ET
 from io import BytesIO
 import math
+import re
 
 # Configuração da página e visual
 st.set_page_config(page_title="Importador Selene", page_icon="🧦", layout="centered")
 
 st.title("Conversor NFe: Selene 🧦")
-st.write("Faça o upload do XML da Selene. O sistema extrai o Tamanho analisando a última parte do código do produto (cProd).")
+st.write("Faça o upload do XML da Selene. O sistema extrai a Cor (código) e o Tamanho analisando a referência do produto (cProd).")
 
 # Botão de Upload na interface
 uploaded_file = st.file_uploader("Arraste e solte o arquivo XML aqui", type=["xml"])
@@ -56,28 +57,29 @@ if uploaded_file is not None:
                 ean = prod.find('nfe:cEAN', ns).text if prod.find('nfe:cEAN', ns) is not None else ""
                 unidade = prod.find('nfe:uCom', ns).text if prod.find('nfe:uCom', ns) is not None else ""
                 
-                # --- A MÁGICA DA SELENE: EXTRAINDO TAMANHO DO CÓDIGO COM PONTOS ---
+                # --- A MÁGICA DA SELENE: EXTRAINDO COR E TAMANHO DO CÓDIGO COM PONTOS ---
                 tamanho_extraido = ""
-                cor_extraida = "" # Mantida em branco pois a Selene usa códigos numéricos
+                cor_extraida = "" 
                 
                 if referencia and "." in referencia:
                     partes = referencia.split(".")
                     if len(partes) >= 3:
-                        tamanho_cru = partes[-1].strip() # Pega a última parte (ex: 42500)
+                        # Pega a parte do meio (ex: 001) para a Cor
+                        cor_extraida = partes[1].strip()
+                        
+                        # Pega a última parte (ex: 42500) para o Tamanho
+                        tamanho_cru = partes[-1].strip() 
                         
                         # Extrai apenas os dois primeiros caracteres se for um número longo (para pegar o "42")
-                        # Se for um tamanho em letras (ex: P, M, G, GG), ele lida de forma diferente depois
                         if len(tamanho_cru) >= 2 and tamanho_cru[:2].isdigit():
                             tamanho_extraido = tamanho_cru[:2]
                         elif tamanho_cru:
-                            # Caso enviem tamanhos como "P00", "M00", pegamos a primeira letra
-                            import re
+                            # Caso enviem tamanhos em letras
                             match = re.match(r"([A-Z]{1,2})", tamanho_cru.upper())
                             if match:
                                 tamanho_extraido = match.group(1)
-
                 
-                # Cálculo do Preço (Regra dos ,90 mantida)
+                # Cálculo do Preço (Regra dos ,90)
                 custo_str = prod.find('nfe:vUnCom', ns).text if prod.find('nfe:vUnCom', ns) is not None else "0"
                 preco_venda_formatado = ""
                 try:
@@ -99,7 +101,7 @@ if uploaded_file is not None:
                 linha_excel["NCM"] = ncm
                 linha_excel["Código de barras"] = ean
                 
-                # Preenchendo a coluna Tamanho
+                # Preenchendo as colunas Cor (com o código) e Tamanho
                 linha_excel["Tamanho"] = tamanho_extraido
                 linha_excel["Cores"] = cor_extraida
                 
