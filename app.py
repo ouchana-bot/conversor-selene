@@ -3,7 +3,6 @@ import pandas as pd
 import xml.etree.ElementTree as ET
 from io import BytesIO
 import math
-import re
 
 # Mapeamento do De-Para: Tamanho (XML) -> ID (Microvix)
 MAPEAMENTO_TAMANHOS = {
@@ -90,7 +89,6 @@ if uploaded_file is not None:
                     partes = referencia.split(".")
                     if len(partes) >= 3:
                         codigo_final = partes[-1].strip().upper()
-                        # Extrai os dois primeiros caracteres para o tamanho e o restante para a cor
                         if len(codigo_final) >= 2:
                             tamanho_extraido = codigo_final[:2]
                             cor_extraida = codigo_final[2:]
