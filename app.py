@@ -30,7 +30,7 @@ def converter_tamanho_para_id(tamanho):
         t_com_zero = t_clean.zfill(2)
         if t_com_zero in MAPEAMENTO_TAMANHOS:
             return MAPEAMENTO_TAMANHOS[t_com_zero]
-    return "tamanho não cadastrado"
+    return f"tamanho não cadastrado ({tamanho})"
 
 st.set_page_config(page_title="Importador Selene", page_icon="🧦", layout="centered")
 
