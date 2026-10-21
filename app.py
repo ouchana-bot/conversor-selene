@@ -5,13 +5,40 @@ from io import BytesIO
 import math
 import re
 
+# Mapeamento do De-Para: Tamanho (XML) -> ID (Microvix)
+MAPEAMENTO_TAMANHOS = {
+    'PP': '2', 'P': '3', 'M': '1', 'G': '4', 'GG': '5', 'XG': '97', 'XGG': '117', 
+    'EP': '123', 'EM': '122', 'EG': '102', 'EGG': '124', 'EXG': '41', 'SG': '140', 
+    'U': '96', 'G1': '159', 'G2': '160', 'G3': '161', 'G4': '162', 'G5': '163', 
+    '01': '98', '02': '158', '03': '99', '04': '150', '06': '151', '08': '152', 
+    '10': '153', '12': '154', '14': '155', '16': '156', '18': '157', '34': '20', 
+    '36': '22', '38': '24', '40': '26', '42': '28', '44': '30', '46': '69', 
+    '48': '165', '50': '71', '52': '72', '54': '73', '56': '74', '58': '75', 
+    '60': '76', '90': '133', '95': '134', '100': '135', '105': '136', '110': '137', 
+    '115': '138', '120': '139', '6M': '170', '9M': '171', '12M': '172', '18M': '173'
+}
+
+def converter_tamanho_para_id(tamanho):
+    if not tamanho:
+        return ""
+    t_clean = str(tamanho).strip().upper()
+    if t_clean in MAPEAMENTO_TAMANHOS:
+        return MAPEAMENTO_TAMANHOS[t_clean]
+    if t_clean.isdigit():
+        t_sem_zero = str(int(t_clean))
+        if t_sem_zero in MAPEAMENTO_TAMANHOS:
+            return MAPEAMENTO_TAMANHOS[t_sem_zero]
+        t_com_zero = t_clean.zfill(2)
+        if t_com_zero in MAPEAMENTO_TAMANHOS:
+            return MAPEAMENTO_TAMANHOS[t_com_zero]
+    return tamanho
+
 # Configuração da página e visual
 st.set_page_config(page_title="Importador Selene", page_icon="🧦", layout="centered")
 
 st.title("Conversor NFe: Selene 🧦")
-st.write("Faça o upload do XML da Selene. O sistema separa o Tamanho e a Cor escondidos na última parte da referência (cProd).")
+st.write("Faça o upload do XML da Selene. O sistema separa Tamanho e Cor e mapeia o Tamanho para o ID do Microvix.")
 
-# Botão de Upload na interface
 uploaded_file = st.file_uploader("Arraste e solte o arquivo XML aqui", type=["xml"])
 
 if uploaded_file is not None:
@@ -57,23 +84,21 @@ if uploaded_file is not None:
                 ean = prod.find('nfe:cEAN', ns).text if prod.find('nfe:cEAN', ns) is not None else ""
                 unidade = prod.find('nfe:uCom', ns).text if prod.find('nfe:uCom', ns) is not None else ""
                 
-                # --- A MÁGICA DA SELENE: SEPARANDO TAMANHO E COR DO FINAL ---
                 tamanho_extraido = ""
                 cor_extraida = "" 
                 
                 if referencia and "." in referencia:
                     partes = referencia.split(".")
                     if len(partes) >= 3:
-                        # Pega a última parte (ex: 42500, P500, GG800)
                         codigo_final = partes[-1].strip() 
-                        
-                        # Expressão regular: Pega 1 ou 2 letras, OU exatos 2 números para o tamanho. O resto vai pra cor.
                         match = re.match(r'^([A-Z]{1,2}|\d{2})(.*)$', codigo_final.upper())
                         if match:
                             tamanho_extraido = match.group(1)
                             cor_extraida = match.group(2)
                 
-                # Cálculo do Preço (Regra dos ,90)
+                # Aplica o De-Para de Tamanho -> ID
+                tamanho_id = converter_tamanho_para_id(tamanho_extraido)
+                
                 custo_str = prod.find('nfe:vUnCom', ns).text if prod.find('nfe:vUnCom', ns) is not None else "0"
                 preco_venda_formatado = ""
                 try:
@@ -94,11 +119,8 @@ if uploaded_file is not None:
                 linha_excel["Custo com ICMS (R$)"] = custo_str.replace('.', ',')
                 linha_excel["NCM"] = ncm
                 linha_excel["Código de barras"] = ean
-                
-                # Preenchendo as colunas separadas
-                linha_excel["Tamanho"] = tamanho_extraido
+                linha_excel["Tamanho"] = tamanho_id
                 linha_excel["Cores"] = cor_extraida
-                
                 linha_excel["Unidade de compra"] = unidade
                 linha_excel["Unidade de venda"] = unidade
                 linha_excel["Preço de venda R$"] = preco_venda_formatado
