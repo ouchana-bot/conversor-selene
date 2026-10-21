@@ -89,11 +89,13 @@ if uploaded_file is not None:
                 if referencia and "." in referencia:
                     partes = referencia.split(".")
                     if len(partes) >= 3:
-                        codigo_final = partes[-1].strip() 
-                        match = re.match(r'^([A-Z]{1,2}|\d{2})(.*)$', codigo_final.upper())
-                        if match:
-                            tamanho_extraido = match.group(1)
-                            cor_extraida = match.group(2)
+                        codigo_final = partes[-1].strip().upper()
+                        # Extrai os dois primeiros caracteres para o tamanho e o restante para a cor
+                        if len(codigo_final) >= 2:
+                            tamanho_extraido = codigo_final[:2]
+                            cor_extraida = codigo_final[2:]
+                        else:
+                            tamanho_extraido = codigo_final
                 
                 tamanho_id = converter_tamanho_para_id(tamanho_extraido)
                 
