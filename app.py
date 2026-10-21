@@ -7,14 +7,14 @@ import math
 # Mapeamento do De-Para: Tamanho (XML) -> ID (Microvix)
 MAPEAMENTO_TAMANHOS = {
     'PP': '2', 'P': '3', 'M': '1', 'G': '4', 'GG': '5', 'XG': '97', 'XGG': '117', 
-    'EP': '123', 'EM': '122', 'EG': '102', 'EGG': '124', 'EXG': '41', 'SG': '140', 
-    'U': '96', 'G1': '159', 'G2': '160', 'G3': '161', 'G4': '162', 'G5': '163', 
-    '01': '98', '02': '158', '03': '99', '04': '150', '06': '151', '08': '152', 
-    '10': '153', '12': '154', '14': '155', '16': '156', '18': '157', '34': '20', 
-    '36': '22', '38': '24', '40': '26', '42': '28', '44': '30', '46': '69', 
-    '48': '165', '50': '71', '52': '72', '54': '73', '56': '74', '58': '75', 
-    '60': '76', '90': '133', '95': '134', '100': '135', '105': '136', '110': '137', 
-    '115': '138', '120': '139', '6M': '170', '9M': '171', '12M': '172', '18M': '173'
+    'XXG': '174', 'EP': '123', 'EM': '122', 'EG': '102', 'EGG': '124', 'EXG': '41', 
+    'SG': '140', 'U': '96', 'G1': '159', 'G2': '160', 'G3': '161', 'G4': '162', 
+    'G5': '163', '01': '98', '02': '158', '03': '99', '04': '150', '06': '151', 
+    '08': '152', '10': '153', '12': '154', '14': '155', '16': '156', '18': '157', 
+    '34': '20', '36': '22', '38': '24', '40': '26', '42': '28', '44': '30', 
+    '46': '69', '48': '165', '50': '71', '52': '72', '54': '73', '56': '74', 
+    '58': '75', '60': '76', '90': '133', '95': '134', '100': '135', '105': '136', 
+    '110': '137', '115': '138', '120': '139', '6M': '170', '9M': '171', '12M': '172', '18M': '173'
 }
 
 def converter_tamanho_para_id(tamanho):
@@ -35,7 +35,7 @@ def converter_tamanho_para_id(tamanho):
 st.set_page_config(page_title="Importador Selene", page_icon="🧦", layout="centered")
 
 st.title("Conversor NFe: Selene 🧦")
-st.write("Faça o upload do XML da Selene. O sistema separa Tamanho e Cor e mapeia o Tamanho para o ID do Microvix.")
+st.write("Faça o upload do XML da Selene. O sistema extrai o Tamanho e mapeia para o ID do Microvix.")
 
 uploaded_file = st.file_uploader("Arraste e solte o arquivo XML aqui", type=["xml"])
 
@@ -83,16 +83,13 @@ if uploaded_file is not None:
                 unidade = prod.find('nfe:uCom', ns).text if prod.find('nfe:uCom', ns) is not None else ""
                 
                 tamanho_extraido = ""
-                cor_extraida = "" 
                 
                 if referencia and "." in referencia:
                     partes = referencia.split(".")
                     if len(partes) >= 3:
                         codigo_final = partes[-1].strip().upper()
-                        # Tudo antes dos últimos 3 caracteres é tamanho; os últimos 3 são a cor
                         if len(codigo_final) > 3:
                             tamanho_extraido = codigo_final[:-3]
-                            cor_extraida = codigo_final[-3:]
                         else:
                             tamanho_extraido = codigo_final
                 
@@ -119,7 +116,7 @@ if uploaded_file is not None:
                 linha_excel["NCM"] = ncm
                 linha_excel["Código de barras"] = ean
                 linha_excel["Tamanho"] = tamanho_id
-                linha_excel["Cores"] = cor_extraida
+                linha_excel["Cores"] = ""  # Mantido em branco conforme solicitado
                 linha_excel["Unidade de compra"] = unidade
                 linha_excel["Unidade de venda"] = unidade
                 linha_excel["Preço de venda R$"] = preco_venda_formatado
