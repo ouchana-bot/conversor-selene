@@ -89,9 +89,10 @@ if uploaded_file is not None:
                     partes = referencia.split(".")
                     if len(partes) >= 3:
                         codigo_final = partes[-1].strip().upper()
-                        if len(codigo_final) >= 2:
-                            tamanho_extraido = codigo_final[:2]
-                            cor_extraida = codigo_final[2:]
+                        # Tudo antes dos últimos 3 caracteres é tamanho; os últimos 3 são a cor
+                        if len(codigo_final) > 3:
+                            tamanho_extraido = codigo_final[:-3]
+                            cor_extraida = codigo_final[-3:]
                         else:
                             tamanho_extraido = codigo_final
                 
